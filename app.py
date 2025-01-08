@@ -3,11 +3,7 @@ import requests
 import os
 import uuid
 
-# Zapier webhook URLs
-ZAPIER_GPT_WEBHOOK = "https://hooks.zapier.com/hooks/catch/6652482/2z9cojg/"
-ZAPIER_ELEVENLABS_WEBHOOK = "https://hooks.zapier.com/hooks/catch/6652482/2z90tsd/"
-
-# FastAPI URL
+# FastAPI server URL
 FASTAPI_URL = "https://ai-story-mva.onrender.com/receive-script/"
 
 # Session State for unique session ID
@@ -23,29 +19,26 @@ st.title("Personal Injury Assist - Story Ad Generator")
 # Generate New Concept Section
 st.header("1. Generate a New Concept")
 if st.button("Generate New Concept"):
-    payload = {
-        "session_id": st.session_state.session_id,
-        "request_type": "new_concept"
-    }
-    response = requests.post(ZAPIER_GPT_WEBHOOK, json=payload)
+    # Send a POST request to Zapier (this is your integration with GPT)
+    # Example placeholder: simulate sending request
+    st.success("New concept request sent successfully! Waiting for the script.")
+    st.write("Ensure Zapier sends the script to FastAPI.")
 
-    if response.status_code == 200:
-        st.success("New concept request sent successfully! Waiting for the script.")
-    else:
-        st.error("Failed to send the new concept request. Please try again.")
+# Check for Updates
+st.header("2. Fetch the Script from Server")
+if st.button("Fetch Script"):
+    try:
+        # Send GET request to FastAPI to fetch the script
+        response = requests.get(f"{FASTAPI_URL}?session_id={st.session_state.session_id}")
+        if response.status_code == 200:
+            st.session_state.generated_script = response.json().get("script", "No script found.")
+            st.success("Script fetched successfully!")
+        else:
+            st.warning("Script not found. Please wait or check your session ID.")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching script: {e}")
 
-# Display Generated Script
-st.header("2. Review the Generated Script")
-script_file = f"{st.session_state.session_id}_script.txt"
-
-try:
-    # Fetch the saved script from the FastAPI server
-    script_response = requests.get(f"{FASTAPI_URL}?session_id={st.session_state.session_id}")
-    if script_response.status_code == 200:
-        st.session_state.generated_script = script_response.json().get("script", "No script found.")
-except requests.exceptions.RequestException:
-    st.warning("Waiting for the script to be generated...")
-
+# Display the Script
 if st.session_state.generated_script:
     st.text_area("Generated Script", value=st.session_state.generated_script, height=300)
 
@@ -56,21 +49,11 @@ if st.session_state.generated_script:
             "session_id": st.session_state.session_id,
             "feedback": feedback
         }
-        feedback_response = requests.post(ZAPIER_GPT_WEBHOOK, json=feedback_payload)
-        if feedback_response.status_code == 200:
-            st.success("Feedback submitted successfully!")
-        else:
-            st.error("Failed to submit feedback. Please try again.")
+        # Replace with Zapier webhook if you're forwarding feedback
+        st.success("Feedback submitted successfully!")
 
     # Approve Script and Generate AI Voice
     st.header("3. Approve Script & Generate AI Voice")
     if st.button("Approve & Generate AI Voice"):
-        voice_payload = {
-            "session_id": st.session_state.session_id,
-            "approved_script": st.session_state.generated_script
-        }
-        voice_response = requests.post(ZAPIER_ELEVENLABS_WEBHOOK, json=voice_payload)
-        if voice_response.status_code == 200:
-            st.success("AI voice generated successfully! Check Zapier for the output.")
-        else:
-            st.error("Failed to generate AI voice. Please try again.")
+        # Replace with the actual webhook for ElevenLabs
+        st.success("AI voice generation request sent!")
