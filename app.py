@@ -1,10 +1,14 @@
 import streamlit as st
 import requests
+import os
 import uuid
 
 # Zapier webhook URLs
 ZAPIER_GPT_WEBHOOK = "https://hooks.zapier.com/hooks/catch/6652482/2z9cojg/"
 ZAPIER_ELEVENLABS_WEBHOOK = "https://hooks.zapier.com/hooks/catch/6652482/2z90tsd/"
+
+# FastAPI URL
+FASTAPI_URL = "https://ai-story-mva.onrender.com/receive-script/"
 
 # Session State for unique session ID
 if "session_id" not in st.session_state:
@@ -26,14 +30,23 @@ if st.button("Generate New Concept"):
     response = requests.post(ZAPIER_GPT_WEBHOOK, json=payload)
 
     if response.status_code == 200:
-        st.session_state.generated_script = response.json().get("script", "No script generated.")
-        st.success("New concept generated successfully!")
+        st.success("New concept request sent successfully! Waiting for the script.")
     else:
-        st.error("Failed to generate a new concept. Please try again.")
+        st.error("Failed to send the new concept request. Please try again.")
 
-# Display and Review Generated Script
+# Display Generated Script
+st.header("2. Review the Generated Script")
+script_file = f"{st.session_state.session_id}_script.txt"
+
+try:
+    # Fetch the saved script from the FastAPI server
+    script_response = requests.get(f"{FASTAPI_URL}?session_id={st.session_state.session_id}")
+    if script_response.status_code == 200:
+        st.session_state.generated_script = script_response.json().get("script", "No script found.")
+except requests.exceptions.RequestException:
+    st.warning("Waiting for the script to be generated...")
+
 if st.session_state.generated_script:
-    st.header("2. Review the Generated Script")
     st.text_area("Generated Script", value=st.session_state.generated_script, height=300)
 
     # Provide Feedback
